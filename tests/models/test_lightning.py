@@ -12,7 +12,7 @@ def test_save_best_state_callback(save_path):
     SCVI.setup_anndata(adata, batch_key="batch", labels_key="labels")
     model = SCVI(adata, n_latent=n_latent)
     callbacks = [SaveBestState(verbose=True)]
-    model.train(3, check_val_every_n_epoch=1, train_size=0.5, callbacks=callbacks)
+    model.train(10, check_val_every_n_epoch=1, train_size=0.5, callbacks=callbacks)
 
 
 def test_set_seed(save_path):

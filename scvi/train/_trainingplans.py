@@ -298,12 +298,14 @@ class TrainingPlan(pl.LightningModule):
             n_obs_minibatch=n_obs_minibatch,
         )
         # pytorch lightning handles everything with the torchmetric object
-        self.log_dict(
-            metrics,
-            on_step=False,
-            on_epoch=True,
-            batch_size=n_obs_minibatch,
-        )
+        for k, fn in metrics.items():
+            self.log(
+                name=k,
+                value=fn.compute().mean(),
+                on_step=False,
+                on_epoch=True,
+                batch_size=n_obs_minibatch,
+            )
 
         # accumlate extra metrics passed to loss recorder
         for extra_metric in loss_recorder.extra_metric_attrs:

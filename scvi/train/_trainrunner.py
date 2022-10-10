@@ -5,6 +5,7 @@ from typing import Optional, Union
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
+from pytorch_lightning.strategies import Strategy, DDPStrategy
 
 from scvi.dataloaders import DataSplitter, SemiSupervisedDataSplitter
 from scvi.model._utils import parse_use_gpu_arg
@@ -55,6 +56,7 @@ class TrainRunner:
         data_splitter: Union[SemiSupervisedDataSplitter, DataSplitter],
         max_epochs: int,
         use_gpu: Optional[Union[str, int, bool]] = None,
+        strategy: Optional[Union[str, Strategy]] = None,
         **trainer_kwargs,
     ):
         self.training_plan = training_plan
@@ -64,10 +66,13 @@ class TrainRunner:
         self.accelerator = accelerator
         self.lightning_devices = lightning_devices
         self.device = device
+        if not strategy:# and lightning_devices > 1:
+            strategy = DDPStrategy()
         self.trainer = Trainer(
             max_epochs=max_epochs,
             accelerator=accelerator,
-            devices=lightning_devices,
+            strategy=strategy,
+            devices=2,# lightning_devices,
             gpus=None,
             **trainer_kwargs,
         )
