@@ -1,4 +1,4 @@
-from typing import Iterable, Optional, Sequence
+from typing import Iterable, Literal, Optional, Sequence
 
 import numpy as np
 import torch
@@ -7,8 +7,7 @@ from torch.distributions import kl_divergence as kl
 from torch.nn import functional as F
 
 from scvi import REGISTRY_KEYS
-from scvi._compat import Literal
-from scvi.module.base import LossRecorder, auto_move_data
+from scvi.module.base import LossOutput, auto_move_data
 from scvi.nn import Decoder, Encoder
 
 from ._classifier import Classifier
@@ -20,7 +19,7 @@ class SCANVAE(VAE):
     """
     Single-cell annotation using variational inference.
 
-    This is an implementation of the scANVI model described in [Xu21]_,
+    This is an implementation of the scANVI model described in :cite:p:`Xu21`,
     inspired from M1 + M2 model, as described in (https://arxiv.org/pdf/1406.5298.pdf).
 
     Parameters
@@ -88,10 +87,10 @@ class SCANVAE(VAE):
         y_prior=None,
         labels_groups: Sequence[int] = None,
         use_labels_groups: bool = False,
-        classifier_parameters: dict = dict(),
+        classifier_parameters: Optional[dict] = None,
         use_batch_norm: Literal["encoder", "decoder", "none", "both"] = "both",
         use_layer_norm: Literal["encoder", "decoder", "none", "both"] = "none",
-        **vae_kwargs
+        **vae_kwargs,
     ):
         super().__init__(
             n_input,
@@ -107,9 +106,10 @@ class SCANVAE(VAE):
             gene_likelihood=gene_likelihood,
             use_batch_norm=use_batch_norm,
             use_layer_norm=use_layer_norm,
-            **vae_kwargs
+            **vae_kwargs,
         )
 
+        classifier_parameters = classifier_parameters or dict()
         use_batch_norm_encoder = use_batch_norm == "encoder" or use_batch_norm == "both"
         use_batch_norm_decoder = use_batch_norm == "decoder" or use_batch_norm == "both"
         use_layer_norm_encoder = use_layer_norm == "encoder" or use_layer_norm == "both"
@@ -128,7 +128,7 @@ class SCANVAE(VAE):
             n_labels=n_labels,
             use_batch_norm=use_batch_norm_encoder,
             use_layer_norm=use_layer_norm_encoder,
-            **cls_parameters
+            **cls_parameters,
         )
 
         self.encoder_z2_z1 = Encoder(
@@ -188,6 +188,7 @@ class SCANVAE(VAE):
 
     @auto_move_data
     def classify(self, x, batch_index=None, cont_covs=None, cat_covs=None):
+        """Classify cells into cell types."""
         if self.log_variational:
             x = torch.log(1 + x)
 
@@ -218,7 +219,7 @@ class SCANVAE(VAE):
         return w_y
 
     @auto_move_data
-    def classification_loss(self, labelled_dataset):
+    def classification_loss(self, labelled_dataset):  # noqa: D102
         x = labelled_dataset[REGISTRY_KEYS.X_KEY]
         y = labelled_dataset[REGISTRY_KEYS.LABELS_KEY]
         batch_idx = labelled_dataset[REGISTRY_KEYS.BATCH_KEY]
@@ -249,6 +250,7 @@ class SCANVAE(VAE):
         labelled_tensors=None,
         classification_ratio=None,
     ):
+        """Compute the loss."""
         px = generative_ouputs["px"]
         qz1 = inference_outputs["qz"]
         z1 = inference_outputs["z"]
@@ -297,18 +299,21 @@ class SCANVAE(VAE):
             if labelled_tensors is not None:
                 classifier_loss = self.classification_loss(labelled_tensors)
                 loss += classifier_loss * classification_ratio
-                return LossRecorder(
-                    loss,
-                    reconst_loss,
-                    kl_locals,
-                    classification_loss=classifier_loss,
-                    n_labelled_tensors=labelled_tensors[REGISTRY_KEYS.X_KEY].shape[0],
+                return LossOutput(
+                    loss=loss,
+                    reconstruction_loss=reconst_loss,
+                    kl_local=kl_locals,
+                    extra_metrics={
+                        "classification_loss": classifier_loss,
+                        "n_labelled_tensors": labelled_tensors[
+                            REGISTRY_KEYS.X_KEY
+                        ].shape[0],
+                    },
                 )
-            return LossRecorder(
-                loss,
-                reconst_loss,
-                kl_locals,
-                kl_global=torch.tensor(0.0),
+            return LossOutput(
+                loss=loss,
+                reconstruction_loss=reconst_loss,
+                kl_local=kl_locals,
             )
 
         probs = self.classifier(z1)
@@ -330,10 +335,12 @@ class SCANVAE(VAE):
         if labelled_tensors is not None:
             classifier_loss = self.classification_loss(labelled_tensors)
             loss += classifier_loss * classification_ratio
-            return LossRecorder(
-                loss,
-                reconst_loss,
-                kl_divergence,
-                classification_loss=classifier_loss,
+            return LossOutput(
+                loss=loss,
+                reconstruction_loss=reconst_loss,
+                kl_local=kl_divergence,
+                extra_metrics={"classification_loss": classifier_loss},
             )
-        return LossRecorder(loss, reconst_loss, kl_divergence)
+        return LossOutput(
+            loss=loss, reconstruction_loss=reconst_loss, kl_local=kl_divergence
+        )

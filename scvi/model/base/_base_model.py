@@ -50,6 +50,7 @@ class BaseModelMetaClass(ABCMeta):
     during model initialization or after running ``self._validate_anndata()``.
     """
 
+    @abstractmethod
     def __init__(cls, name, bases, dct):
         cls._setup_adata_manager_store: Dict[
             str, Type[AnnDataManager]
@@ -482,7 +483,7 @@ class BaseModelClass(metaclass=BaseModelMetaClass):
         return self.history_
 
     def _get_user_attributes(self):
-        """Returns all the self attributes defined in a model class, e.g., self.is_trained_."""
+        """Returns all the self attributes defined in a model class, e.g., `self.is_trained_`."""
         attributes = inspect.getmembers(self, lambda a: not (inspect.isroutine(a)))
         attributes = [
             a for a in attributes if not (a[0].startswith("__") and a[0].endswith("__"))
@@ -508,7 +509,7 @@ class BaseModelClass(metaclass=BaseModelMetaClass):
             if not isinstance(v, AnnData) and not isinstance(v, MuData)
         }
         # not very efficient but is explicit
-        # seperates variable params (**kwargs) from non variable params into two dicts
+        # separates variable params (**kwargs) from non variable params into two dicts
         non_var_params = [p.name for p in parameters if p.kind != p.VAR_KEYWORD]
         non_var_params = {k: v for (k, v) in all_params.items() if k in non_var_params}
         var_params = [p.name for p in parameters if p.kind == p.VAR_KEYWORD]
@@ -831,7 +832,7 @@ class BaseLatentModeModelClass(BaseModelClass):
     """Abstract base class for scvi-tools models that support latent mode."""
 
     @property
-    def latent_data_type(self) -> Optional[LatentDataType]:
+    def latent_data_type(self) -> Union[LatentDataType, None]:
         """The latent data type associated with this model."""
         return (
             self.adata_manager.get_from_registry(REGISTRY_KEYS.LATENT_MODE_KEY)
@@ -842,7 +843,7 @@ class BaseLatentModeModelClass(BaseModelClass):
     @abstractmethod
     def to_latent_mode(
         self,
-        mode: LatentDataType = "dist",
+        mode: LatentDataType = "posterior_parameters",
         *args,
         **kwargs,
     ):
@@ -860,4 +861,8 @@ class BaseLatentModeModelClass(BaseModelClass):
         mode
             The latent data type used
         """
-        pass
+
+    @staticmethod
+    @abstractmethod
+    def _get_latent_fields(mode: LatentDataType):
+        """Return the anndata fields required for latent mode support."""

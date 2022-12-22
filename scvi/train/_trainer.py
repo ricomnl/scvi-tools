@@ -1,13 +1,12 @@
 import sys
 import warnings
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import numpy as np
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import LightningLoggerBase
 
 from scvi import settings
-from scvi._compat import Literal
 
 from ._callbacks import LoudEarlyStopping
 from ._logger import SimpleLogger
@@ -155,7 +154,7 @@ class Trainer(pl.Trainer):
         )
 
     def fit(self, *args, **kwargs):
-
+        """Fit the model."""
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 action="ignore", category=UserWarning, message="The dataloader,"

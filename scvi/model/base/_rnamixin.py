@@ -2,7 +2,7 @@ import inspect
 import logging
 import warnings
 from functools import partial
-from typing import Dict, Iterable, Optional, Sequence, Union
+from typing import Dict, Iterable, Literal, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,6 @@ import torch
 from anndata import AnnData
 
 from scvi import REGISTRY_KEYS
-from scvi._compat import Literal
 from scvi._types import Number
 from scvi._utils import _doc_params
 from scvi.utils import unsupported_in_latent_mode
@@ -185,9 +184,12 @@ class RNASeqMixin:
         **kwargs,
     ) -> pd.DataFrame:
         r"""
+        \
+
         A unified method for differential expression analysis.
 
-        Implements `"vanilla"` DE [Lopez18]_ and `"change"` mode DE [Boyeau19]_.
+
+        Implements ``'vanilla'`` DE :cite:p:`Lopez18` and ``'change'`` mode DE :cite:p:`Boyeau19`.
 
         Parameters
         ----------

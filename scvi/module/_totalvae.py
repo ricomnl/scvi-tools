@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """Main module."""
-from typing import Dict, Iterable, Optional, Tuple, Union
+from typing import Dict, Iterable, Literal, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -9,13 +8,12 @@ from torch.distributions import Normal
 from torch.distributions import kl_divergence as kl
 
 from scvi import REGISTRY_KEYS
-from scvi._compat import Literal
 from scvi.distributions import (
     NegativeBinomial,
     NegativeBinomialMixture,
     ZeroInflatedNegativeBinomial,
 )
-from scvi.module.base import BaseModuleClass, LossRecorder, auto_move_data
+from scvi.module.base import BaseModuleClass, LossOutput, auto_move_data
 from scvi.nn import DecoderTOTALVI, EncoderTOTALVI, one_hot
 
 torch.backends.cudnn.benchmark = True
@@ -26,7 +24,7 @@ class TOTALVAE(BaseModuleClass):
     """
     Total variational inference for CITE-seq data.
 
-    Implements the totalVI model of [GayosoSteier21]_.
+    Implements the totalVI model of :cite:p:`GayosoSteier21`.
 
     Parameters
     ----------
@@ -378,6 +376,7 @@ class TOTALVAE(BaseModuleClass):
         size_factor=None,
         transform_batch: Optional[int] = None,
     ) -> Dict[str, Union[torch.Tensor, Dict[str, torch.Tensor]]]:
+        """Run the generative step."""
         if cont_covs is None:
             decoder_input = z
         elif z.dim() != cont_covs.dim():
@@ -649,10 +648,13 @@ class TOTALVAE(BaseModuleClass):
             kl_div_back_pro=kl_div_back_pro,
         )
 
-        return LossRecorder(loss, reconst_losses, kl_local, kl_global=torch.tensor(0.0))
+        return LossOutput(
+            loss=loss, reconstruction_loss=reconst_losses, kl_local=kl_local
+        )
 
     @torch.inference_mode()
     def sample(self, tensors, n_samples=1):
+        """Sample from the generative model."""
         inference_kwargs = dict(n_samples=n_samples)
         with torch.inference_mode():
             inference_outputs, generative_outputs, = self.forward(
@@ -679,6 +681,7 @@ class TOTALVAE(BaseModuleClass):
     @torch.inference_mode()
     @auto_move_data
     def marginal_ll(self, tensors, n_mc_samples):
+        """Computes the marginal log likelihood of the data under the model."""
         x = tensors[REGISTRY_KEYS.X_KEY]
         batch_index = tensors[REGISTRY_KEYS.BATCH_KEY]
         to_sum = torch.zeros(x.size()[0], n_mc_samples)
@@ -696,7 +699,7 @@ class TOTALVAE(BaseModuleClass):
             log_pro_back_mean = generative_outputs["log_pro_back_mean"]
 
             # Reconstruction Loss
-            reconst_loss = losses._reconstruction_loss
+            reconst_loss = losses.reconstruction_loss
             reconst_loss_gene = reconst_loss["reconst_loss_gene"]
             reconst_loss_protein = reconst_loss["reconst_loss_protein"]
 

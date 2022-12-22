@@ -102,9 +102,9 @@ def test_jax_scvi():
 
     model = JaxSCVI(adata, n_latent=n_latent, gene_likelihood="poisson")
     model.train(1, train_size=0.5)
-    z1 = model.get_latent_representation(give_mean=True, mc_samples=1)
+    z1 = model.get_latent_representation(give_mean=True, n_samples=1)
     assert z1.ndim == 2
-    z2 = model.get_latent_representation(give_mean=False, mc_samples=15)
+    z2 = model.get_latent_representation(give_mean=False, n_samples=15)
     assert (z2.ndim == 3) and (z2.shape[0] == 15)
 
 
@@ -828,14 +828,14 @@ def test_ann_dataloader():
     assert a.n_obs == 400
     adl = AnnDataLoader(adata_manager, batch_size=397, drop_last=3)
     assert len(adl) == 2
-    for i, x in enumerate(adl):
+    for _i, _ in enumerate(adl):
         pass
-    assert i == 1
+    assert _i == 1
     adl = AnnDataLoader(adata_manager, batch_size=398, drop_last=3)
     assert len(adl) == 1
-    for i, x in enumerate(adl):
+    for _i, _ in enumerate(adl):
         pass
-    assert i == 0
+    assert _i == 0
     with pytest.raises(ValueError):
         AnnDataLoader(adata_manager, batch_size=1, drop_last=2)
 
@@ -937,7 +937,7 @@ def test_device_backed_data_splitter():
     assert len(loaded_x) == a.shape[0]
     np.testing.assert_array_equal(loaded_x.cpu().numpy(), a.X)
 
-    training_plan = TrainingPlan(model.module, len(ds.train_idx))
+    training_plan = TrainingPlan(model.module)
     runner = TrainRunner(
         model,
         training_plan=training_plan,
@@ -1557,7 +1557,6 @@ def test_multivi():
         data,
         n_genes=50,
         n_regions=50,
-        n_proteins=0,
     )
     vae.train(1, save_best=False)
     vae.train(1, adversarial_mixing=False)
@@ -1582,20 +1581,17 @@ def test_multivi():
         data,
         n_genes=50,
         n_regions=50,
-        n_proteins=0,
     )
     vae.train(3)
 
     # Test with modality weights and penalties
     data = synthetic_iid()
     MULTIVI.setup_anndata(data, batch_key="batch")
-    vae = MULTIVI(data, n_genes=50, n_regions=50, n_proteins=0, modality_weights="cell")
+    vae = MULTIVI(data, n_genes=50, n_regions=50, modality_weights="cell")
     vae.train(3)
-    vae = MULTIVI(
-        data, n_genes=50, n_regions=50, n_proteins=0, modality_weights="universal"
-    )
+    vae = MULTIVI(data, n_genes=50, n_regions=50, modality_weights="universal")
     vae.train(3)
-    vae = MULTIVI(data, n_genes=50, n_regions=50, n_proteins=0, modality_penalty="MMD")
+    vae = MULTIVI(data, n_genes=50, n_regions=50, modality_penalty="MMD")
     vae.train(3)
 
     # Test with non-zero protein data
@@ -1610,9 +1606,9 @@ def test_multivi():
         data,
         n_genes=50,
         n_regions=50,
-        n_proteins=data.obsm["protein_expression"].shape[1],
         modality_weights="cell",
     )
+    assert vae.n_proteins == data.obsm["protein_expression"].shape[1]
     vae.train(3)
 
 

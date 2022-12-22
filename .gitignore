@@ -113,8 +113,10 @@ ENV/
 .floo
 .flooignore
 
-
 /data
 .vscode/settings.json
 .vscode/launch.json
 poetry.lock
+
+# local debugging
+/local
