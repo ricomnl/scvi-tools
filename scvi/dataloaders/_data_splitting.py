@@ -124,6 +124,7 @@ class DataSplitter(pl.LightningDataModule):
         )
 
     def train_dataloader(self):
+        """Create train data loader."""
         return AnnDataLoader(
             self.adata_manager,
             indices=self.train_idx,
@@ -135,6 +136,7 @@ class DataSplitter(pl.LightningDataModule):
         )
 
     def val_dataloader(self):
+        """Create validation data loader."""
         if len(self.val_idx) > 0:
             return AnnDataLoader(
                 self.adata_manager,
@@ -149,6 +151,7 @@ class DataSplitter(pl.LightningDataModule):
             pass
 
     def test_dataloader(self):
+        """Create test data loader."""
         if len(self.test_idx) > 0:
             return AnnDataLoader(
                 self.adata_manager,
@@ -298,6 +301,7 @@ class SemiSupervisedDataSplitter(pl.LightningDataModule):
         self.data_loader_kwargs.update(dl_kwargs)
 
     def train_dataloader(self):
+        """Create the train data loader."""
         return self.data_loader_class(
             self.adata_manager,
             indices=self.train_idx,
@@ -308,6 +312,7 @@ class SemiSupervisedDataSplitter(pl.LightningDataModule):
         )
 
     def val_dataloader(self):
+        """Create the validation data loader."""
         if len(self.val_idx) > 0:
             return self.data_loader_class(
                 self.adata_manager,
@@ -321,6 +326,7 @@ class SemiSupervisedDataSplitter(pl.LightningDataModule):
             pass
 
     def test_dataloader(self):
+        """Create the test data loader."""
         if len(self.test_idx) > 0:
             return self.data_loader_class(
                 self.adata_manager,
@@ -391,6 +397,7 @@ class DeviceBackedDataSplitter(DataSplitter):
         self.shuffle_test_val = shuffle_test_val
 
     def setup(self, stage: Optional[str] = None):
+        """Create the train, validation, and test indices."""
         super().setup()
 
         if self.shuffle is False:
@@ -409,6 +416,7 @@ class DeviceBackedDataSplitter(DataSplitter):
         self.val_tensor_dict = self._get_tensor_dict(self.val_idx, device=self.device)
 
     def _get_tensor_dict(self, indices, device):
+        """Get tensor dict for a given set of indices."""
         if len(indices) is not None and len(indices) > 0:
             dl = AnnDataLoader(
                 self.adata_manager,
@@ -430,6 +438,7 @@ class DeviceBackedDataSplitter(DataSplitter):
             return None
 
     def _make_dataloader(self, tensor_dict: Dict[str, torch.Tensor], shuffle):
+        """Create a dataloader from a tensor dict."""
         if tensor_dict is None:
             return None
         dataset = _DeviceBackedDataset(tensor_dict)
@@ -439,12 +448,15 @@ class DeviceBackedDataSplitter(DataSplitter):
         return DataLoader(dataset, sampler=sampler, batch_size=None)
 
     def train_dataloader(self):
+        """Create the train data loader."""
         return self._make_dataloader(self.train_tensor_dict, self.shuffle)
 
     def test_dataloader(self):
+        """Create the test data loader."""
         return self._make_dataloader(self.test_tensor_dict, self.shuffle_test_val)
 
     def val_dataloader(self):
+        """Create the validation data loader."""
         return self._make_dataloader(self.val_tensor_dict, self.shuffle_test_val)
 
 

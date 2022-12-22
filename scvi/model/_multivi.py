@@ -2,7 +2,7 @@ import logging
 import warnings
 from collections.abc import Iterable as IterableClass
 from functools import partial
-from typing import Dict, Iterable, List, Optional, Sequence, Union
+from typing import Dict, Iterable, List, Literal, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -12,7 +12,6 @@ from scipy.sparse import csr_matrix, vstack
 from torch.distributions import Normal
 
 from scvi import REGISTRY_KEYS
-from scvi._compat import Literal
 from scvi._types import Number
 from scvi._utils import _doc_params
 from scvi.data import AnnDataManager
@@ -48,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 class MULTIVI(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass, ArchesMixin):
     """
-    Integration of multi-modal and single-modality data [AshuachGabitto21]_.
+    Integration of multi-modal and single-modality data :cite:p:`AshuachGabitto21`.
 
     MultiVI is used to integrate multiomic datasets with single-modality (expression
     or accessibility) datasets.
@@ -137,7 +136,6 @@ class MULTIVI(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass, ArchesMixin):
         adata: AnnData,
         n_genes: int,
         n_regions: int,
-        n_proteins: int,
         modality_weights: Literal["equal", "cell", "universal"] = "equal",
         modality_penalty: Literal["Jeffreys", "MMD", "None"] = "Jeffreys",
         n_hidden: Optional[int] = None,
@@ -154,7 +152,6 @@ class MULTIVI(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass, ArchesMixin):
         deeply_inject_covariates: bool = False,
         encode_covariates: bool = False,
         fully_paired: bool = False,
-        empirical_protein_background_prior: bool = True,
         protein_dispersion: Literal[
             "protein", "protein-batch", "protein-label"
         ] = "protein",
@@ -174,6 +171,11 @@ class MULTIVI(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass, ArchesMixin):
         use_size_factor_key = (
             REGISTRY_KEYS.SIZE_FACTOR_KEY in self.adata_manager.data_registry
         )
+
+        if "n_proteins" in self.summary_stats:
+            n_proteins = self.summary_stats.n_proteins
+        else:
+            n_proteins = 0
 
         self.module = MULTIVAE(
             n_input_genes=n_genes,
@@ -724,9 +726,12 @@ class MULTIVI(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass, ArchesMixin):
         **kwargs,
     ) -> pd.DataFrame:
         r"""
+        \
+
         A unified method for differential accessibility analysis.
 
-        Implements `"vanilla"` DE [Lopez18]_ and `"change"` mode DE [Boyeau19]_.
+
+        Implements ``'vanilla'`` DE :cite:p:`Lopez18` and ``'change'`` mode DE :cite:p:`Boyeau19`.
 
         Parameters
         ----------
@@ -848,9 +853,10 @@ class MULTIVI(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass, ArchesMixin):
         **kwargs,
     ) -> pd.DataFrame:
         r"""
-        A unified method for differential expression analysis.
+        \
 
-        Implements `"vanilla"` DE [Lopez18]_ and `"change"` mode DE [Boyeau19]_.
+        A unified method for differential expression analysis. Implements `"vanilla"`
+        DE :cite:p:`Lopez18` and `"change"` mode DE :cite:p:`Boyeau19`.
 
         Parameters
         ----------

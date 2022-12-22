@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import Dict, Iterable, List, Optional, Sequence, Union
+from typing import Dict, Iterable, List, Literal, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -8,7 +8,6 @@ import torch
 from anndata import AnnData
 from scipy.sparse import csr_matrix, vstack
 
-from scvi._compat import Literal
 from scvi._constants import REGISTRY_KEYS
 from scvi._utils import _doc_params
 from scvi.data import AnnDataManager
@@ -35,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 class PEAKVI(ArchesMixin, VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     """
-    Peak Variational Inference [Ashuach22]_
+    Peak Variational Inference :cite:p:`Ashuach22`.
 
     Parameters
     ----------
@@ -432,10 +431,11 @@ class PEAKVI(ArchesMixin, VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         two_sided: bool = True,
         **kwargs,
     ) -> pd.DataFrame:
-        r"""
+        r"""\
+
         A unified method for differential accessibility analysis.
 
-        Implements `"vanilla"` DE [Lopez18]_ and `"change"` mode DE [Boyeau19]_.
+        Implements `"vanilla"` DE :cite:p:`Lopez18`. and `"change"` mode DE :cite:p:`Boyeau19`.
 
         Parameters
         ----------
@@ -517,7 +517,7 @@ class PEAKVI(ArchesMixin, VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         result = pd.DataFrame(
             {
                 "prob_da": result.proba_de,
-                "is_da_fdr": result.loc[:, "is_de_fdr_{}".format(fdr_target)],
+                "is_da_fdr": result.loc[:, f"is_de_fdr_{fdr_target}"],
                 "bayes_factor": result.bayes_factor,
                 "effect_size": result.scale2 - result.scale1,
                 "emp_effect": result.emp_mean2 - result.emp_mean1,

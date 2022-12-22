@@ -1,11 +1,10 @@
 import logging
-from typing import Optional
+from typing import Literal, Optional
 
 import pandas as pd
 from anndata import AnnData
 
 from scvi import REGISTRY_KEYS
-from scvi._compat import Literal
 from scvi.data import AnnDataManager
 from scvi.data.fields import CategoricalObsField, LayerField
 from scvi.model._utils import _init_library_size
@@ -20,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class LinearSCVI(RNASeqMixin, VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     """
-    Linearly-decoded VAE [Svensson20]_.
+    Linearly-decoded VAE :cite:p:`Svensson20`.
 
     Parameters
     ----------
@@ -125,7 +124,7 @@ class LinearSCVI(RNASeqMixin, VAEMixin, UnsupervisedTrainingMixin, BaseModelClas
         Shape is genes by `n_latent`.
 
         """
-        cols = ["Z_{}".format(i) for i in range(self.n_latent)]
+        cols = [f"Z_{i}" for i in range(self.n_latent)]
         var_names = self.adata.var_names
         loadings = pd.DataFrame(
             self.module.get_loadings(), index=var_names, columns=cols

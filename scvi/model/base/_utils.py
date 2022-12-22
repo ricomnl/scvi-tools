@@ -3,7 +3,7 @@ import os
 import pickle
 import warnings
 from collections.abc import Iterable as IterableClass
-from typing import List, Optional, Tuple, Union
+from typing import List, Literal, Optional, Tuple, Union
 
 import anndata
 import mudata
@@ -12,7 +12,6 @@ import pandas as pd
 import torch
 from anndata import AnnData, read
 
-from scvi._compat import Literal
 from scvi.data._constants import _SETUP_METHOD_NAME
 from scvi.data._download import _download
 from scvi.utils import track
@@ -266,12 +265,10 @@ def _de_core(
         sort_key = "proba_de" if mode == "change" else "bayes_factor"
         res = res.sort_values(by=sort_key, ascending=False)
         if mode == "change":
-            res["is_de_fdr_{}".format(fdr)] = _fdr_de_prediction(
-                res["proba_de"], fdr=fdr
-            )
+            res[f"is_de_fdr_{fdr}"] = _fdr_de_prediction(res["proba_de"], fdr=fdr)
         if idx1 is None:
             g2 = "Rest" if group2 is None else group2
-            res["comparison"] = "{} vs {}".format(g1, g2)
+            res["comparison"] = f"{g1} vs {g2}"
             res["group1"] = g1
             res["group2"] = g2
         df_results.append(res)

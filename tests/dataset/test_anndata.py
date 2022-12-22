@@ -5,7 +5,7 @@ import anndata
 import numpy as np
 import pandas as pd
 import pytest
-import scipy.sparse as sparse
+from scipy import sparse
 from scipy.sparse.csr import csr_matrix
 
 import scvi
@@ -63,7 +63,7 @@ def test_transfer_fields_correct_mapping(adata1, adata2):
     adata1_manager.transfer_fields(adata2)
     labels_mapping = adata1_manager.get_state_registry("labels").categorical_mapping
     correct_label = np.where(labels_mapping == "label_1")[0][0]
-    adata2.obs["_scvi_labels"][0] == correct_label
+    assert adata2.obs["_scvi_labels"][0] == correct_label
 
 
 def test_transfer_fields_correct_batch(adata1, adata2):
@@ -537,7 +537,8 @@ def test_backed_anndata(adata, save_path):
 
     # test get item
     bd = AnnTorchDataset(adata_manager)
-    bd[np.arange(adata.n_obs)]
+    subset = bd[np.arange(adata.n_obs)]
+    assert isinstance(subset["X"], np.ndarray)
 
 
 def test_backed_anndata_sparse(adata, save_path):
@@ -550,4 +551,5 @@ def test_backed_anndata_sparse(adata, save_path):
 
     # test get item
     bd = AnnTorchDataset(adata_manager)
-    bd[np.arange(adata.n_obs)]
+    subset = bd[np.arange(adata.n_obs)]
+    assert isinstance(subset["X"], np.ndarray)
