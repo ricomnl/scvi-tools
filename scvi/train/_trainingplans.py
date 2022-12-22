@@ -326,17 +326,17 @@ class TrainingPlan(pl.LightningModule):
         if "kl_weight" in self.loss_kwargs:
             self.loss_kwargs.update({"kl_weight": self.kl_weight})
         _, _, scvi_loss = self.forward(batch, loss_kwargs=self.loss_kwargs)
-        self.log("train_loss", scvi_loss.loss, on_epoch=True)
-        self.compute_and_log_metrics(scvi_loss, self.train_metrics, "train")
-        return scvi_loss.loss
+        # self.log("train_loss", scvi_loss.loss, on_epoch=True, sync_dist=True)
+        # self.compute_and_log_metrics(scvi_loss, self.train_metrics, "train")
+        # return scvi_loss.loss
 
     def validation_step(self, batch, batch_idx):
         # loss kwargs here contains `n_obs` equal to n_training_obs
         # so when relevant, the actual loss value is rescaled to number
         # of training examples
         _, _, scvi_loss = self.forward(batch, loss_kwargs=self.loss_kwargs)
-        self.log("validation_loss", scvi_loss.loss, on_epoch=True)
-        self.compute_and_log_metrics(scvi_loss, self.val_metrics, "validation")
+        # self.log("validation_loss", scvi_loss.loss, on_epoch=True, sync_dist=True)
+        # self.compute_and_log_metrics(scvi_loss, self.val_metrics, "validation")
 
     def configure_optimizers(self):
         params = filter(lambda p: p.requires_grad, self.module.parameters())

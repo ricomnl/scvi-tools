@@ -56,23 +56,27 @@ class TrainRunner:
         data_splitter: Union[SemiSupervisedDataSplitter, DataSplitter],
         max_epochs: int,
         use_gpu: Optional[Union[str, int, bool]] = None,
+        devices: Optional[int] = 1,
         strategy: Optional[Union[str, Strategy]] = None,
         **trainer_kwargs,
     ):
         self.training_plan = training_plan
         self.data_splitter = data_splitter
         self.model = model
+        # change parse_use_gpu_arg to get number of gpus
         accelerator, lightning_devices, device = parse_use_gpu_arg(use_gpu)
         self.accelerator = accelerator
         self.lightning_devices = lightning_devices
         self.device = device
         if not strategy:# and lightning_devices > 1:
-            strategy = DDPStrategy()
+            strategy = DDPStrategy(find_unused_parameters=False)
+        from pytorch_lightning.profiler import SimpleProfiler
         self.trainer = Trainer(
+            profiler=SimpleProfiler(dirpath='/home/ricomeinl/scvi-tools/profiler', filename='profile'),
             max_epochs=max_epochs,
             accelerator=accelerator,
-            strategy=strategy,
-            devices=2,# lightning_devices,
+            strategy=strategy,#'ddp'
+            devices=devices,# lightning_devices,
             gpus=None,
             **trainer_kwargs,
         )

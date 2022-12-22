@@ -76,6 +76,7 @@ class UnsupervisedTrainingMixin:
         self,
         max_epochs: Optional[int] = None,
         use_gpu: Optional[Union[str, int, bool]] = None,
+        devices: Optional[int] = 1,
         train_size: float = 0.9,
         validation_size: Optional[float] = None,
         batch_size: int = 128,
@@ -137,6 +138,7 @@ class UnsupervisedTrainingMixin:
             data_splitter=data_splitter,
             max_epochs=max_epochs,
             use_gpu=use_gpu,
+            devices=devices,
             **trainer_kwargs,
         )
         return runner()

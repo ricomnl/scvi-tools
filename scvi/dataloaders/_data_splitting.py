@@ -129,6 +129,7 @@ class DataSplitter(pl.LightningDataModule):
             indices=self.train_idx,
             shuffle=True,
             drop_last=3,
+            num_workers=8,
             pin_memory=self.pin_memory,
             **self.data_loader_kwargs,
         )
@@ -140,6 +141,7 @@ class DataSplitter(pl.LightningDataModule):
                 indices=self.val_idx,
                 shuffle=False,
                 drop_last=3,
+                num_workers=8,
                 pin_memory=self.pin_memory,
                 **self.data_loader_kwargs,
             )
